@@ -1,0 +1,23 @@
+{
+  "name": "tema",
+  "version": "1.0.0",
+  "description": "\"# Semantic-Tableaux-Method-for-Propositional-Logic\"",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DACUS1995/Semantic-Tableaux-Method-for-Propositional-Logic.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DACUS1995/Semantic-Tableaux-Method-for-Propositional-Logic/issues"
+  },
+  "homepage": "https://github.com/DACUS1995/Semantic-Tableaux-Method-for-Propositional-Logic#readme",
+  "dependencies": {
+    "fs-extra": "^7.0.0"
+  }
+}
