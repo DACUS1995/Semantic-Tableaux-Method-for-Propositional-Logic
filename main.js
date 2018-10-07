@@ -2,6 +2,7 @@
 // @ts-check
 
 const Parser = require("./Parser");
+const TB = require("./TableauxMethod");
 
 class Main
 {
@@ -17,6 +18,10 @@ class Main
 		const parser = new Parser(strFileName);
 		await parser.processFile();
 		parser.printAllFormulas();
+
+		const tb = new TB(parser.parsedFormulas);
+		tb.applyMethod();
+		tb.printResults();
 	}
 }
 

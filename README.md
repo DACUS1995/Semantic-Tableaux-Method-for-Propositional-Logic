@@ -1,4 +1,4 @@
-"# Semantic-Tableaux-Method-for-Propositional-Logic" 
+# Semantic-Tableaux-Method-for-Propositional-Logic
 
 ``` bash
 # install dependencies

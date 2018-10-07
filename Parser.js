@@ -23,7 +23,7 @@ class Parser
 		for(let strFormula of this._arrFormulas)
 		{
 			this._arrRawFormulas.push(strFormula);
-			this._parseFormula(strFormula);
+			this._arrParsedFormulas.push(this._parseFormula(strFormula));
 		}
 	}
 
@@ -37,12 +37,12 @@ class Parser
 		}
 	}
 
-	async _parseFormula(strFormula)
+	_parseFormula(strFormula)
 	{
-		// First make sure to eliminate all white spaces
-		strFormula = strFormula.replace(/ /g,'');
+		// First make sure to eliminate all white spaces and line endings
+		strFormula = strFormula.replace(/ |\r?\n|\r/g,'');
 		
-		this._arrParsedFormulas.push(this._addExpressionBlock(strFormula));
+		return this._addExpressionBlock(strFormula);
 	}
 
 	_addExpressionBlock(strFormula)
@@ -169,6 +169,11 @@ class Parser
 	{
 		const arrFormulas = strFileContents.split("\n");
 		return arrFormulas;
+	}
+
+	get parsedFormulas()
+	{
+		return this._arrParsedFormulas;
 	}
 }
 
