@@ -1,7 +1,7 @@
 "use strict";
 // @ts-check
 
-const Lexer = require("./Lexer");
+const Parser = require("./Parser");
 
 class Main
 {
@@ -14,8 +14,9 @@ class Main
 	{
 		const strFileName = process.argv[2] || "input.txt";
 		
-		const lexer = new Lexer(strFileName);
-		lexer.processFile();
+		const parser = new Parser(strFileName);
+		await parser.processFile();
+		parser.printAllFormulas();
 	}
 }
 
@@ -23,7 +24,7 @@ process.on(
 	"unhandledRejection",
 	(reason, promise) => {
 		console.log("-> unhandledRejection");
-		console.log(`Promise: ${promise}, Reason: ${reason}`);
+		console.log(`Promise: ${promise}, Reason: ${reason.stack}`);
 
 		process.exit(1);
 	}
