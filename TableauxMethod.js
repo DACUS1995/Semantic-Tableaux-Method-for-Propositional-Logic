@@ -7,6 +7,9 @@ class TableauxMethod
 		this._arrParsedFormulas = arrParsedFormulas;
 		this._arrExpandedFormulas = JSON.parse(JSON.stringify(arrParsedFormulas));
 		this._objVariablePool = {};
+
+		this._bFoundSolution = false;
+		this._objSolution = null;
 	}
 
 	applyMethod()
@@ -14,19 +17,147 @@ class TableauxMethod
 		this._applyRules();
 
 		// Evaluate the formulas in the order in which they were present in the input file
-		// this._evaluateFormula(0);
+		this._evaluateFormula();
+
+		if(this._bFoundSolution)
+		{
+			console.log("\n!!!!!!Solution found!!!!!!");
+			console.log(JSON.stringify(this._objSolution));
+			console.log("\n");
+		}
+		else
+		{
+			console.log("\n!!!!!!Solution not found!!!!!!\n");
+		}
 	}
 
 	_evaluateFormula(nFormulaIndex = 0)
 	{
-		const objCurrentFormula = this._arrParsedFormulas[nFormulaIndex];
-		this._visitNode(objCurrentFormula);
+		const objCurrentFormula = this._arrExpandedFormulas[nFormulaIndex];
+		this._evaluateNode(objCurrentFormula);
 	}
 
 	_applyRules(nFormulaIndex = 0)
 	{
 		const objCurrentFormula = this._arrExpandedFormulas[nFormulaIndex];
 		this._visitNode(objCurrentFormula);
+	}
+
+	_evaluateNode(objExpressionNode, objVariableCollection = {})
+	{
+		if(this._bFoundSolution)
+		{
+			return;
+		}
+
+		const strCurrentOp = objExpressionNode.op;
+
+		if(Op[strCurrentOp].type === "unary")
+		{
+			// Check if the operand is a terminal node
+			if(typeof objExpressionNode.expR === "string")
+			{
+				const bVariableValue = !(strCurrentOp === Op.NOT.name);
+
+				// Check if there is allready set a specific variable and if the truth value differs
+				if(
+					objVariableCollection[objExpressionNode.expR] 
+					&& objVariableCollection[objExpressionNode.expR] !== bVariableValue
+				)
+				{
+					return;
+				}
+				else
+				{
+					// TODO figure out how to determine if the note expression  is part of a AND or OR expression
+					objVariableCollection[objExpressionNode.expR] = bVariableValue;
+					this._bFoundSolution = true;
+					this._objSolution = objVariableCollection;
+					return;
+				}
+			}
+			else
+			{
+				this._evaluateNode(objExpressionNode.expR, objVariableCollection);
+			}
+		}
+
+		if(Op[strCurrentOp].type === "binary")
+		{
+			let objVarCollForLeftExp = objVariableCollection;
+			let objVarCollForRightExp = objVariableCollection;
+
+			if(strCurrentOp !== Op.AND.name)
+			{
+				objVarCollForLeftExp = JSON.parse(JSON.stringify(objVariableCollection));
+				objVarCollForRightExp = JSON.parse(JSON.stringify(objVariableCollection));
+			}
+
+			// Check if the operands are a terminal node
+			if(typeof objExpressionNode.expL === "string")
+			{
+				// Check if there is allready set a specific variable and if the truth value differs
+				if(
+					objVarCollForLeftExp[objExpressionNode.expL] 
+					&& objVarCollForLeftExp[objExpressionNode.expL] !== true
+				)
+				{
+					return;
+				}
+				else
+				{
+					objVarCollForLeftExp[objExpressionNode.expL] = true;
+
+					if(strCurrentOp === Op.OR.name)
+					{
+						this._bFoundSolution = true;
+						this._objSolution = objVarCollForLeftExp;
+						return;
+					}
+				}
+			}
+
+			// Check if the operand is a terminal node
+			if(typeof objExpressionNode.expR === "string")
+			{
+				// Check if there is allready set a specific variable and if the truth value differs
+				if(
+					objVarCollForRightExp[objExpressionNode.expR] 
+					&& objVarCollForRightExp[objExpressionNode.expR] !== true
+				)
+				{
+					return;
+				}
+				else
+				{
+					objVarCollForRightExp[objExpressionNode.expR] = true;
+
+					if(strCurrentOp === Op.OR.name)
+					{
+						this._bFoundSolution = true;
+						this._objSolution = objVarCollForRightExp;
+						return;
+					}
+
+					if(typeof objExpressionNode.expL === "string" && strCurrentOp === Op.AND.name)
+					{
+						this._bFoundSolution = true;
+						this._objSolution = objVarCollForRightExp;
+						return;
+					}
+				}
+			}
+
+			if(typeof objExpressionNode.expL !== "string")
+			{
+				this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp);
+			}
+
+			if(typeof objExpressionNode.expR !== "string")
+			{
+				this._evaluateNode(objExpressionNode.expR, objVarCollForRightExp);
+			}
+		}
 	}
 
 	_visitNode(objExpressionNode)
