@@ -17,12 +17,12 @@ objExports = {
     },
     IMP: {
         type: "binary",
-        symbol: "->",
+        symbol: ">",
         name: "IMP"
     },
     EQI: {
         type: "binary",
-        symbol: "<->",
+        symbol: "-",
         name: "EQI"
     }
 };

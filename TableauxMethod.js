@@ -50,6 +50,7 @@ class TableauxMethod
 			return;
 		}
 
+		console.log(JSON.stringify(objVariableCollection));
 		const strCurrentOp = objExpressionNode.op;
 
 		if(Op[strCurrentOp].type === "unary")
@@ -187,7 +188,7 @@ class TableauxMethod
 		}
 
 		const strCurrentOp = objExpressionNode.op;
-		console.log("Op:" + JSON.stringify(objExpressionNode, null, 4));
+		// console.log("Op:" + JSON.stringify(objExpressionNode, null, 4));
 
 		if(Op[strCurrentOp].type === "unary")
 		{
@@ -268,7 +269,7 @@ class TableauxMethod
 
 		objNode.expL = {
 			op: Op.NOT.name,
-			expR: objnode.expL
+			expR: objNode.expL
 		};
 	}
 

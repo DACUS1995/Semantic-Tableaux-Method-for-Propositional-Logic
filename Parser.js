@@ -19,6 +19,17 @@ class Parser
 	{
 		const strFileContents = await FileLoader.readFile(this._strFileName);
 		this._arrFormulas = this._separateFormulas(strFileContents);
+		
+		// Concatanate all formulas using operator AND
+		this._arrFormulas = [this._arrFormulas.reduce((acc, red) => {
+			if(acc.length === 0)
+			{
+				return `(${red})`;
+			}
+
+			return acc += `&(${red})`;
+		}, "")];
+
 
 		for(let strFormula of this._arrFormulas)
 		{
@@ -42,10 +53,10 @@ class Parser
 		// First make sure to eliminate all white spaces and line endings
 		strFormula = strFormula.replace(/ |\r?\n|\r/g,'');
 		
-		return this._addExpressionBlock(strFormula);
+		return this._addExpressionBlock(strFormula, true);
 	}
 
-	_addExpressionBlock(strFormula)
+	_addExpressionBlock(strFormula, bFirstCall = false)
 	{
 		console.log("Parsing: " + strFormula);
 
@@ -60,6 +71,7 @@ class Parser
 		if(
 			strFormula.charAt(0) === "(" 
 			&& strFormula.charAt(strFormula.length - 1) === ")"
+			&& bFirstCall === false
 		)
 		{
 			strFormula = strFormula.substring(1, strFormula.length - 1);
@@ -108,6 +120,18 @@ class Parser
 			{
 				nPrincipalOpOffset = i;
 				principalOp = Op.NOT;
+			}
+
+			if(strCurrentChar === Op.IMP.symbol.charAt(0) && principalOp === null)
+			{
+				nPrincipalOpOffset = i;
+				principalOp = Op.IMP;
+			}
+
+			if(strCurrentChar === Op.EQI.symbol.charAt(0) && principalOp === null)
+			{
+				nPrincipalOpOffset = i;
+				principalOp = Op.EQI;
 			}
 		}
 
