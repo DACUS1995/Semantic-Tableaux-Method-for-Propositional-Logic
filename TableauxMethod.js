@@ -43,7 +43,7 @@ class TableauxMethod
 		this._visitNode(objCurrentFormula);
 	}
 
-	_evaluateNode(objExpressionNode, objVariableCollection = {})
+	_evaluateNode(objExpressionNode, objVariableCollection = {}, bCanTerminate = true)
 	{
 		if(this._bFoundSolution)
 		{
@@ -69,11 +69,17 @@ class TableauxMethod
 				}
 				else
 				{
-					// TODO figure out how to determine if the note expression  is part of a AND or OR expression
-					objVariableCollection[objExpressionNode.expR] = bVariableValue;
-					this._bFoundSolution = true;
-					this._objSolution = objVariableCollection;
-					return;
+					if(bCanTerminate === true)
+					{
+						objVariableCollection[objExpressionNode.expR] = bVariableValue;
+						this._bFoundSolution = true;
+						this._objSolution = objVariableCollection;
+						return;
+					}
+					else
+					{
+						objVariableCollection[objExpressionNode.expR] = bVariableValue;
+					}
 				}
 			}
 			else
@@ -94,6 +100,7 @@ class TableauxMethod
 			}
 
 			// Check if the operands are a terminal node
+			// The terminal expersion must be added to the variable pool first to propagate that specific pool into the recursion
 			if(typeof objExpressionNode.expL === "string")
 			{
 				// Check if there is allready set a specific variable and if the truth value differs
@@ -108,7 +115,7 @@ class TableauxMethod
 				{
 					objVarCollForLeftExp[objExpressionNode.expL] = true;
 
-					if(strCurrentOp === Op.OR.name)
+					if(strCurrentOp === Op.OR.name && bCanTerminate === true)
 					{
 						this._bFoundSolution = true;
 						this._objSolution = objVarCollForLeftExp;
@@ -132,14 +139,18 @@ class TableauxMethod
 				{
 					objVarCollForRightExp[objExpressionNode.expR] = true;
 
-					if(strCurrentOp === Op.OR.name)
+					if(strCurrentOp === Op.OR.name && bCanTerminate === true)
 					{
 						this._bFoundSolution = true;
 						this._objSolution = objVarCollForRightExp;
 						return;
 					}
 
-					if(typeof objExpressionNode.expL === "string" && strCurrentOp === Op.AND.name)
+					if(
+						typeof objExpressionNode.expL === "string" 
+						&& strCurrentOp === Op.AND.name
+						&& bCanTerminate === true
+					)
 					{
 						this._bFoundSolution = true;
 						this._objSolution = objVarCollForRightExp;
@@ -150,12 +161,19 @@ class TableauxMethod
 
 			if(typeof objExpressionNode.expL !== "string")
 			{
-				this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp);
+				if(strCurrentOp === Op.AND.name)
+				{
+					this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp, false);
+				}
+				else
+				{
+					this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp, bCanTerminate);
+				}
 			}
 
 			if(typeof objExpressionNode.expR !== "string")
 			{
-				this._evaluateNode(objExpressionNode.expR, objVarCollForRightExp);
+				this._evaluateNode(objExpressionNode.expR, objVarCollForRightExp, bCanTerminate);
 			}
 		}
 	}
