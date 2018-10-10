@@ -21,13 +21,21 @@ class Parser
 		this._arrFormulas = this._separateFormulas(strFileContents);
 		
 		// Concatanate all formulas using operator AND
-		this._arrFormulas = [this._arrFormulas.reduce((acc, red) => {
+		this._arrFormulas = [this._arrFormulas.reduce((acc, str) => {
 			if(acc.length === 0)
 			{
-				return `(${red})`;
+				if(str.length === 1)
+				{
+					return `${str}`;
+				}
+				return `(${str})`;
 			}
 
-			return acc += `&(${red})`;
+			if(str.length === 1)
+			{
+				return acc += `&${str}`;
+			}
+			return acc += `&(${str})`;
 		}, "")];
 
 
@@ -67,17 +75,41 @@ class Parser
 			throw new Error("Empty string representation of formula given.");
 		}
 
-		// Make sure the raw formula is not bounded by redundant parentheses
+		// Make sure the raw formula is not bounded by strundant parentheses
 		if(
 			strFormula.charAt(0) === "(" 
 			&& strFormula.charAt(strFormula.length - 1) === ")"
 			&& bFirstCall === false
 		)
 		{
-			strFormula = strFormula.substring(1, strFormula.length - 1);
+			let nCount = 0;
+			let bClearParentheses = true;
+
+			for(let i = 0; i < strFormula.length-1; i++)
+			{
+				const strChar = strFormula.charAt(i);
+				if(strChar === "(")
+				{
+					nCount++;
+				}
+
+				if(strChar === ")") 
+				{
+					nCount--;
+				}
+
+				if(nCount === 0 && i != strFormula.length - 1)
+				{
+					bClearParentheses = false;
+					break;
+				}
+			}
+
+			if(bClearParentheses)
+			{
+				strFormula = strFormula.substring(1, strFormula.length - 1);
+			}
 		}
-		// // Check if there are parentheses
-		// if(strFormula.indexOf("(") !== -1)
 		
 		let nOpenParenthesesCount = 0;
 		let nPrincipalOpOffset = null;
@@ -97,6 +129,7 @@ class Parser
 			{
 				nOpenParenthesesCount--;
 			}
+
 
 			if(nOpenParenthesesCount != 0)
 			{

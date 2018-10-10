@@ -19,7 +19,7 @@ class TableauxMethod
 	applyMethod()
 	{
 		this._applyRules();
-
+		this.printResults();
 		// Evaluate the formulas in the order in which they were present in the input file
 		this._evaluateFormula();
 	}
@@ -59,6 +59,7 @@ class TableauxMethod
 
 	_evaluateNode(objExpressionNode, arrValuePool, bCanTerminate = true)
 	{
+		// console.log("Evaluating: " + JSON.stringify(objExpressionNode));
 		if(this._bFoundSolution)
 		{
 			return;
@@ -98,8 +99,8 @@ class TableauxMethod
 				}
 				else
 				{
-					throw new Error("Should not enter this else.");
-					this._evaluateNode(objExpressionNode.expR, objVariableCollection);
+					// throw new Error("Should not enter this else.");
+					arrValuePool = this._evaluateNode(objExpressionNode.expR, arrValuePool);
 				}
 			}
 
@@ -125,6 +126,10 @@ class TableauxMethod
 				for(let i = 0; i < arrValueLeftPool.length; i++)
 				{
 					const objVarCollForLeftExp = arrValueLeftPool[i];
+					if(objVarCollForLeftExp === null)
+					{
+						continue;
+					}
 
 					// Check if there is allready set a specific variable and if the truth value differs
 					if(
@@ -147,8 +152,13 @@ class TableauxMethod
 			{
 				for(let i = 0; i < arrValueRightPool.length; i++)
 				{
+					
 					const objVarCollForRightExp = arrValueRightPool[i];
-				
+					if(objVarCollForRightExp === null)
+					{
+						continue;
+					}
+					
 					// Check if there is allready set a specific variable and if the truth value differs
 					if(
 						objVarCollForRightExp[objExpressionNode.expR] 
@@ -325,7 +335,7 @@ class TableauxMethod
 	_Rule_NON_NON_A(objNode)
 	{
 		console.log("_Rule_NON_NON_A");
-		objNode = objNode.expL.expL;
+		objNode.expR = objNode.expR.expR;
 	}
 
 	_Rule_NON_A_AND_B(objNode)

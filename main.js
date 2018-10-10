@@ -21,7 +21,7 @@ class Main
 
 		const tb = new TB(parser.parsedFormulas);
 		tb.applyMethod();
-		tb.printResults();
+		// tb.printResults();
 	}
 }
 
