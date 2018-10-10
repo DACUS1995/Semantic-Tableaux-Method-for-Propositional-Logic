@@ -30,7 +30,7 @@ class TableauxMethod
 		this._arrResults = this._evaluateNode(objCurrentFormula, [{}]);
 
 		if(
-			this._arrResults === null 
+			this._arrResults === null
 			|| this._arrResults.length === 0
 		)
 		{
@@ -40,6 +40,11 @@ class TableauxMethod
 
 		for(let objSolution of this._arrResults)
 		{
+			if(objSolution === null)
+			{
+				continue;
+			}
+
 			console.log("\n!!!!!!Solution found!!!!!!");
 			console.log(JSON.stringify(objSolution));
 			console.log("\n");
@@ -189,7 +194,7 @@ class TableauxMethod
 			{
 				arrPoolUnion = [...arrValueLeftPool, ...arrValueRightPool];
 			}
-			
+
 			return arrPoolUnion;
 
 			throw new Error("Unreachable code.");
