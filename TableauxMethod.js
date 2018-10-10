@@ -6,6 +6,10 @@ class TableauxMethod
 	{
 		this._arrParsedFormulas = arrParsedFormulas;
 		this._arrExpandedFormulas = JSON.parse(JSON.stringify(arrParsedFormulas));
+		this._arrAllFormulas = [{}];
+
+		this._arrResults = null;
+
 		this._objVariablePool = {};
 
 		this._bFoundSolution = false;
@@ -18,23 +22,28 @@ class TableauxMethod
 
 		// Evaluate the formulas in the order in which they were present in the input file
 		this._evaluateFormula();
-
-		if(this._bFoundSolution)
-		{
-			console.log("\n!!!!!!Solution found!!!!!!");
-			console.log(JSON.stringify(this._objSolution));
-			console.log("\n");
-		}
-		else
-		{
-			console.log("\n!!!!!!Solution not found!!!!!!\n");
-		}
 	}
 
 	_evaluateFormula(nFormulaIndex = 0)
 	{
 		const objCurrentFormula = this._arrExpandedFormulas[nFormulaIndex];
-		this._evaluateNode(objCurrentFormula);
+		this._arrResults = this._evaluateNode(objCurrentFormula, [{}]);
+
+		if(
+			this._arrResults === null 
+			|| this._arrResults.length === 0
+		)
+		{
+			console.log("\n!!!!!!Solution not found!!!!!!\n");
+			return;
+		}
+
+		for(let objSolution of this._arrResults)
+		{
+			console.log("\n!!!!!!Solution found!!!!!!");
+			console.log(JSON.stringify(objSolution));
+			console.log("\n");
+		}
 	}
 
 	_applyRules(nFormulaIndex = 0)
@@ -43,84 +52,87 @@ class TableauxMethod
 		this._visitNode(objCurrentFormula);
 	}
 
-	_evaluateNode(objExpressionNode, objVariableCollection = {}, bCanTerminate = true)
+	_evaluateNode(objExpressionNode, arrValuePool, bCanTerminate = true)
 	{
 		if(this._bFoundSolution)
 		{
 			return;
 		}
 
-		console.log(JSON.stringify(objVariableCollection));
 		const strCurrentOp = objExpressionNode.op;
 
 		if(Op[strCurrentOp].type === "unary")
 		{
-			// Check if the operand is a terminal node
-			if(typeof objExpressionNode.expR === "string")
+			for(let i = 0; i < arrValuePool.length; i++)
 			{
-				const bVariableValue = !(strCurrentOp === Op.NOT.name);
-
-				// Check if there is allready set a specific variable and if the truth value differs
-				if(
-					objVariableCollection[objExpressionNode.expR] 
-					&& objVariableCollection[objExpressionNode.expR] !== bVariableValue
-				)
+				let objVariableCollection = arrValuePool[i];
+	
+				if(objVariableCollection === null)
 				{
-					return;
+					continue;
 				}
-				else
+				
+				// Check if the operand is a terminal node
+				if(typeof objExpressionNode.expR === "string")
 				{
-					if(bCanTerminate === true)
+					const bVariableValue = !(strCurrentOp === Op.NOT.name);
+	
+					// Check if there is allready set a specific variable and if the truth value differs
+					if(
+						objVariableCollection[objExpressionNode.expR] 
+						&& objVariableCollection[objExpressionNode.expR] !== bVariableValue
+					)
 					{
-						objVariableCollection[objExpressionNode.expR] = bVariableValue;
-						this._bFoundSolution = true;
-						this._objSolution = objVariableCollection;
-						return;
+						arrValuePool[i] = null;
+						continue;
 					}
 					else
 					{
 						objVariableCollection[objExpressionNode.expR] = bVariableValue;
 					}
 				}
+				else
+				{
+					throw new Error("Should not enter this else.");
+					this._evaluateNode(objExpressionNode.expR, objVariableCollection);
+				}
 			}
-			else
-			{
-				this._evaluateNode(objExpressionNode.expR, objVariableCollection);
-			}
+
+			return arrValuePool;
 		}
+
 
 		if(Op[strCurrentOp].type === "binary")
 		{
-			let objVarCollForLeftExp = objVariableCollection;
-			let objVarCollForRightExp = objVariableCollection;
+			let arrValueLeftPool = arrValuePool;
+			let arrValueRightPool = arrValuePool;
 
-			if(strCurrentOp !== Op.AND.name)
+			if(strCurrentOp === Op.OR.name)
 			{
-				objVarCollForLeftExp = JSON.parse(JSON.stringify(objVariableCollection));
-				objVarCollForRightExp = JSON.parse(JSON.stringify(objVariableCollection));
+				arrValueLeftPool = JSON.parse(JSON.stringify(arrValuePool));
+				arrValueRightPool = JSON.parse(JSON.stringify(arrValuePool));
 			}
 
 			// Check if the operands are a terminal node
 			// The terminal expersion must be added to the variable pool first to propagate that specific pool into the recursion
 			if(typeof objExpressionNode.expL === "string")
 			{
-				// Check if there is allready set a specific variable and if the truth value differs
-				if(
-					objVarCollForLeftExp[objExpressionNode.expL] 
-					&& objVarCollForLeftExp[objExpressionNode.expL] !== true
-				)
+				for(let i = 0; i < arrValueLeftPool.length; i++)
 				{
-					return;
-				}
-				else
-				{
-					objVarCollForLeftExp[objExpressionNode.expL] = true;
+					const objVarCollForLeftExp = arrValueLeftPool[i];
 
-					if(strCurrentOp === Op.OR.name && bCanTerminate === true)
+					// Check if there is allready set a specific variable and if the truth value differs
+					if(
+						objVarCollForLeftExp[objExpressionNode.expL] 
+						&& objVarCollForLeftExp[objExpressionNode.expL] !== true
+					)
 					{
-						this._bFoundSolution = true;
-						this._objSolution = objVarCollForLeftExp;
-						return;
+						arrValueLeftPool[i] = null;
+						continue;
+					}
+					else
+					{
+						objVarCollForLeftExp[objExpressionNode.expL] = true;
 					}
 				}
 			}
@@ -128,54 +140,59 @@ class TableauxMethod
 			// Check if the operand is a terminal node
 			if(typeof objExpressionNode.expR === "string")
 			{
-				// Check if there is allready set a specific variable and if the truth value differs
-				if(
-					objVarCollForRightExp[objExpressionNode.expR] 
-					&& objVarCollForRightExp[objExpressionNode.expR] !== true
-				)
+				for(let i = 0; i < arrValueRightPool.length; i++)
 				{
-					return;
-				}
-				else
-				{
-					objVarCollForRightExp[objExpressionNode.expR] = true;
-
-					if(strCurrentOp === Op.OR.name && bCanTerminate === true)
-					{
-						this._bFoundSolution = true;
-						this._objSolution = objVarCollForRightExp;
-						return;
-					}
-
+					const objVarCollForRightExp = arrValueRightPool[i];
+				
+					// Check if there is allready set a specific variable and if the truth value differs
 					if(
-						typeof objExpressionNode.expL === "string" 
-						&& strCurrentOp === Op.AND.name
-						&& bCanTerminate === true
+						objVarCollForRightExp[objExpressionNode.expR] 
+						&& objVarCollForRightExp[objExpressionNode.expR] !== true
 					)
 					{
-						this._bFoundSolution = true;
-						this._objSolution = objVarCollForRightExp;
-						return;
+						arrValueRightPool[i] = null;
+						continue;
+					}
+					else
+					{
+						objVarCollForRightExp[objExpressionNode.expR] = true;
 					}
 				}
 			}
 
+			let arrPoolUnion = null;
+
 			if(typeof objExpressionNode.expL !== "string")
 			{
+
 				if(strCurrentOp === Op.AND.name)
 				{
-					this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp, false);
+					arrValueLeftPool = this._evaluateNode(objExpressionNode.expL, arrValueLeftPool, false);
+					arrValueRightPool = arrValueLeftPool;
 				}
 				else
 				{
-					this._evaluateNode(objExpressionNode.expL, objVarCollForLeftExp, bCanTerminate);
+					arrValueLeftPool = this._evaluateNode(objExpressionNode.expL, arrValueLeftPool, false);
 				}
 			}
 
 			if(typeof objExpressionNode.expR !== "string")
 			{
-				this._evaluateNode(objExpressionNode.expR, objVarCollForRightExp, bCanTerminate);
+				arrValueRightPool = this._evaluateNode(objExpressionNode.expR, arrValueRightPool, bCanTerminate);
 			}
+
+			if(strCurrentOp === Op.AND.name)
+			{
+				arrPoolUnion = arrValueRightPool;
+			}
+			else
+			{
+				arrPoolUnion = [...arrValueLeftPool, ...arrValueRightPool];
+			}
+			
+			return arrPoolUnion;
+
+			throw new Error("Unreachable code.");
 		}
 	}
 
